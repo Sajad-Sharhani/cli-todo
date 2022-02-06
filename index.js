@@ -10,7 +10,7 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 import lodash from 'lodash';
-// import {green as g, red as r, yellow as y} from 'chalk';
+import chalk from 'chalk';
 import alert from 'cli-alerts';
 const fs = require('fs');
 const path = require('path');
@@ -27,6 +27,7 @@ import init from './utils/init.js';
 import cli from './utils/cli.js';
 import log from './utils/log.js';
 import ask from './utils/ask.js';
+import select from './utils/select.js';
 // const init = require('./utils/init');
 // const cli = require('./utils/cli');
 // const log = require('./utils/log');
@@ -56,7 +57,13 @@ const { clear, debug } = flags;
 	// COMMAND: todo view or todo ls
 	if (input.includes(`view`) || input.includes(`ls`)) {
 		const allTodos = db.chain.get('todos').value();
-		allTodos.map((todo, i) => console.log(`${++i}. ${todo.title}`));
+		allTodos.map((todo, i) =>
+			console.log(`${chalk.dim(`${++i}:`)} ${todo.title}`)
+		);
+
+		console.log(
+			`\n${chalk.hex(`#fad000`).inverse(` TOTAL `)} ${allTodos.length}\n`
+		);
 	}
 
 	// COMMAND: todo add
@@ -68,6 +75,27 @@ const { clear, debug } = flags;
 			type: `success`,
 			name: `ADDED`,
 			msg: `successfully!`
+		});
+	}
+
+	// COMMAND: todo delete
+	if (input.includes(`del`)) {
+		const allTodos = db.chain.get('todos').value();
+		const toDels = await select({
+			choices: allTodos,
+			message: `Finish todos:`
+		});
+
+		toDels.map(todoTitle => {
+			db.data.todos.pop(todoTitle.index);
+
+			db.write();
+		});
+
+		alert({
+			type: `success`,
+			name: `FINISHED`,
+			msg: `${toDels.length} todos`
 		});
 	}
 
